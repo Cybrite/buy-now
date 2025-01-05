@@ -6,6 +6,7 @@ import Product from "./models/product.model.js";
 dotenv.config();
 
 const app = express();
+app.use(express.json()); //allows json data in req.body
 
 app.get("/", (req, res) => {
   res.send("Hello from the backend");
@@ -16,7 +17,7 @@ app.listen(5000, () => {
   console.log("Server is running on http://localhost:5000 🚀");
 });
 
-app.post("/products", async (req, res) => {
+app.post("/api/products", async (req, res) => {
   const product = await req.body;
 
   if (product.name === "" || product.price === "" || product.image === "") {
