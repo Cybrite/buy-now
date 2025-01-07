@@ -16,5 +16,5 @@ app.get("/", (req, res) => {
 
 app.listen(5000, () => {
   connectDB();
-  console.log("Server is running on http://localhost:5000 🚀");
+  console.log(`Server is running on http://localhost:${process.env.PORT} 🚀`);
 });
