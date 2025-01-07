@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import Product from "./models/product.model.js";
+import mongoose from "mongoose";
 
 dotenv.config();
 
@@ -16,6 +17,8 @@ app.listen(5000, () => {
   connectDB();
   console.log("Server is running on http://localhost:5000 🚀");
 });
+
+//controllers & routes
 
 app.get("/api/products", async (req, res) => {
   try {
@@ -53,6 +56,26 @@ app.delete("/api/products/:id", async (req, res) => {
     res.status(200).json({ success: true, message: "Product deleted" });
   } catch (error) {
     console.log(`Error in deleting a product: ${error.message}`);
+    res.status(500).json({ success: false, message: "server error" });
+  }
+});
+
+app.put("/api/products/:id", async (req, res) => {
+  const { id } = req.params;
+
+  const product = await req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+
+  try {
+    const updatedProduct = await Product.findByIdAndUpdate(id, product, {
+      new: true,
+    });
+    res.status(200).json({ success: true, product: updatedProduct });
+  } catch (error) {
+    console.log(`Error in updating a product: ${error.message}`);
     res.status(500).json({ success: false, message: "server error" });
   }
 });
