@@ -28,7 +28,13 @@ import { EditIcon, DeleteIcon } from "@chakra-ui/icons";
 import { useProductStore } from "../store/product";
 
 const ProductCard = ({ product }) => {
-  const [updatedProduct, setUpdatedProduct] = useState(product);
+  const [updatedProduct, setUpdatedProduct] = useState({
+    name: product?.name || "",
+    price: product?.price || "",
+    image: product?.image || "",
+    description: product?.description || "",
+  });
+
   const textColor = useColorModeValue("gray.700", "gray.100");
   const bgColor = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
@@ -57,21 +63,36 @@ const ProductCard = ({ product }) => {
   };
 
   const handleUpdate = async (_id, updatedProduct) => {
-    const data = await updateProduct(_id, updatedProduct);
-    onClose();
-    if (!data.success) {
+    try {
+      const data = await updateProduct(_id, updatedProduct);
+
+      if (!data.success || !data.product) {
+        toast({
+          title: "Error",
+          description: "Error updating product. Please try again.",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+        return;
+      }
+      
+      setUpdatedProduct(data.product);
+
+      onClose();
       toast({
-        title: "Error",
-        description: 'Error updating product. Please try again.',
-        status: "error",
+        title: "Success",
+        description: "Product updated successfully.",
+        status: "success",
         duration: 5000,
         isClosable: true,
       });
-    } else {
+    } catch (error) {
+      console.error("Error updating product:", error); // Debug log
       toast({
-        title: "Success",
-        description: 'Product updated successfully.',
-        status: "success",
+        title: "Error",
+        description: "An error occurred while updating the product.",
+        status: "error",
         duration: 5000,
         isClosable: true,
       });

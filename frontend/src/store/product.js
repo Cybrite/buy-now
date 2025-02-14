@@ -37,6 +37,7 @@ export const useProductStore = create((set) => ({
       }
 
       const data = await res.json();
+      console.log("Fetched Products:", data.products); // Debug log
 
       set({ products: data.products, isLoading: false });
     } catch (error) {
@@ -51,7 +52,7 @@ export const useProductStore = create((set) => ({
     });
     const data = await res.json();
 
-    //updating the UI
+    // Updating the UI
     if (data.success) {
       set((state) => ({
         products: state.products.filter((product) => product._id !== productId),
@@ -70,13 +71,17 @@ export const useProductStore = create((set) => ({
     });
     const data = await res.json();
 
-    //updating the UI
+    console.log("API Response:", data); // Debug log
+
+    // Updating the UI
     if (data.success) {
-      set((state) => ({
-        products: state.products.map((product) =>
-          product._id === productId ? data.data : product
-        ),
-      }));
+      set((state) => {
+        const updatedProducts = state.products.map((product) =>
+          product._id === productId ? data.product : product
+        );
+        console.log("Updated Products:", updatedProducts); // Debug log
+        return { products: updatedProducts };
+      });
     }
     return data;
   },

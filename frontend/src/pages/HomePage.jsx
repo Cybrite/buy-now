@@ -1,11 +1,13 @@
 import { Container, VStack, Text, SimpleGrid, Box } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import { useProductStore } from "../store/product";
-import { useEffect } from "react";
+import { useEffect, memo } from "react";
 import ProductCard from "../components/ProductCard";
 
 const HomePage = () => {
   const { products, isLoading, fetchProducts } = useProductStore();
+
+  const validProducts = products.filter((product) => product);
 
   useEffect(() => {
     fetchProducts();
@@ -45,7 +47,7 @@ const HomePage = () => {
               w="full"
               px={{ base: 2, md: 0 }}
             >
-              {products.map((product) => (
+              {validProducts.map((product) => (
                 <ProductCard key={product._id} product={product} />
               ))}
             </SimpleGrid>
@@ -77,4 +79,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage;
+export default memo(HomePage);
