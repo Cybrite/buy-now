@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, memo } from "react";
 import {
   Box,
   Heading,
@@ -27,7 +27,7 @@ import {
 import { EditIcon, DeleteIcon } from "@chakra-ui/icons";
 import { useProductStore } from "../store/product";
 
-const ProductCard = ({ product }) => {
+const UpdateProductModal = memo(({ isOpen, onClose, product, onUpdate }) => {
   const [updatedProduct, setUpdatedProduct] = useState({
     name: product?.name || "",
     price: product?.price || "",
@@ -35,6 +35,75 @@ const ProductCard = ({ product }) => {
     description: product?.description || "",
   });
 
+  const handleInputChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setUpdatedProduct(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  }, []);
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size={{ base: "full", md: "md" }}>
+      <ModalOverlay />
+      <ModalContent mx={{ base: 4, md: 0 }}>
+        <ModalHeader>Update Product</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          <VStack spacing={4}>
+            <FormControl>
+              <FormLabel>Product Name</FormLabel>
+              <Input
+                name="name"
+                value={updatedProduct.name}
+                onChange={handleInputChange}
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Price</FormLabel>
+              <Input
+                name="price"
+                value={updatedProduct.price}
+                onChange={handleInputChange}
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Image URL</FormLabel>
+              <Input
+                name="image"
+                value={updatedProduct.image}
+                onChange={handleInputChange}
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Description</FormLabel>
+              <Textarea
+                name="description"
+                value={updatedProduct.description}
+                onChange={handleInputChange}
+                resize="vertical"
+              />
+            </FormControl>
+          </VStack>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            colorScheme="blue"
+            mr={3}
+            onClick={() => onUpdate(product._id, updatedProduct)}
+          >
+            Update
+          </Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+});
+
+const ProductCard = memo(({ product }) => {
   const textColor = useColorModeValue("gray.700", "gray.100");
   const bgColor = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
@@ -43,42 +112,33 @@ const ProductCard = ({ product }) => {
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setUpdatedProduct((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const handleDelete = useCallback(async (_id) => {
+    try {
+      const data = await deleteProduct(_id);
+      toast({
+        title: data.success ? "Success" : "Error",
+        description: data.message,
+        status: data.success ? "success" : "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  }, [deleteProduct, toast]);
 
-  const handleDelete = async (_id) => {
-    const data = await deleteProduct(_id);
-    toast({
-      title: data.success ? "Success" : "Error",
-      description: data.message,
-      status: data.success ? "success" : "error",
-      duration: 5000,
-      isClosable: true,
-    });
-  };
-
-  const handleUpdate = async (_id, updatedProduct) => {
+  const handleUpdate = useCallback(async (_id, updatedProduct) => {
     try {
       const data = await updateProduct(_id, updatedProduct);
-
       if (!data.success || !data.product) {
-        toast({
-          title: "Error",
-          description: "Error updating product. Please try again.",
-          status: "error",
-          duration: 5000,
-          isClosable: true,
-        });
-        return;
+        throw new Error("Update failed");
       }
-      
-      setUpdatedProduct(data.product);
-
       onClose();
       toast({
         title: "Success",
@@ -87,8 +147,7 @@ const ProductCard = ({ product }) => {
         duration: 5000,
         isClosable: true,
       });
-    } catch (error) {
-      console.error("Error updating product:", error); // Debug log
+    } catch {
       toast({
         title: "Error",
         description: "An error occurred while updating the product.",
@@ -97,7 +156,7 @@ const ProductCard = ({ product }) => {
         isClosable: true,
       });
     }
-  };
+  }, [updateProduct, toast, onClose]);
 
   return (
     <Box
@@ -113,11 +172,7 @@ const ProductCard = ({ product }) => {
       border="1px"
       borderColor={borderColor}
     >
-      <Box
-        position="relative"
-        height={{ base: "200px", sm: "240px" }}
-        overflow="hidden"
-      >
+      <Box position="relative" height={{ base: "200px", sm: "240px" }} overflow="hidden">
         <Image
           src={product?.image || "/placeholder.jpg"}
           alt={product?.name || "Product"}
@@ -132,23 +187,12 @@ const ProductCard = ({ product }) => {
         <Heading as="h3" fontSize={{ base: "md", md: "lg" }} noOfLines={2}>
           {product?.name || "Product Name"}
         </Heading>
-
-        <Text
-          fontWeight="bold"
-          fontSize={{ base: "lg", md: "xl" }}
-          textColor={textColor}
-        >
+        <Text fontWeight="bold" fontSize={{ base: "lg", md: "xl" }} textColor={textColor}>
           {product?.price || "$0.00"}
         </Text>
-
-        <Text
-          fontWeight="bold"
-          fontSize={{ base: "sm", md: "md" }}
-          textColor={textColor}
-        >
+        <Text fontWeight="bold" fontSize={{ base: "sm", md: "md" }} textColor={textColor}>
           {product?.description || "About the Product..."}
         </Text>
-
         <HStack spacing={2} pt={2}>
           <IconButton
             aria-label="Edit product"
@@ -167,72 +211,17 @@ const ProductCard = ({ product }) => {
         </HStack>
       </Stack>
 
-      <Modal
+      <UpdateProductModal
         isOpen={isOpen}
         onClose={onClose}
-        size={{ base: "full", md: "md" }}
-      >
-        <ModalOverlay />
-        <ModalContent mx={{ base: 4, md: 0 }}>
-          <ModalHeader>Update Product</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <VStack spacing={4}>
-              <FormControl>
-                <FormLabel>Product Name</FormLabel>
-                <Input
-                  name="name"
-                  value={updatedProduct.name}
-                  onChange={handleInputChange}
-                />
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>Price</FormLabel>
-                <Input
-                  name="price"
-                  value={updatedProduct.price}
-                  onChange={handleInputChange}
-                />
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>Image URL</FormLabel>
-                <Input
-                  name="image"
-                  value={updatedProduct.image}
-                  onChange={handleInputChange}
-                />
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>Description</FormLabel>
-                <Textarea
-                  name="description"
-                  value={updatedProduct.description}
-                  onChange={handleInputChange}
-                  resize="vertical"
-                />
-              </FormControl>
-            </VStack>
-          </ModalBody>
-
-          <ModalFooter>
-            <Button
-              colorScheme="blue"
-              mr={3}
-              onClick={() => handleUpdate(product._id, updatedProduct)}
-            >
-              Update
-            </Button>
-            <Button variant="ghost" onClick={onClose}>
-              Cancel
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+        product={product}
+        onUpdate={handleUpdate}
+      />
     </Box>
   );
-};
+});
+
+ProductCard.displayName = 'ProductCard';
+UpdateProductModal.displayName = 'UpdateProductModal';
 
 export default ProductCard;
