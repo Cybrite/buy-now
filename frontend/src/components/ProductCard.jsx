@@ -120,6 +120,14 @@ const ProductCard = ({ product }) => {
           {product?.price || "$0.00"}
         </Text>
 
+        <Text
+          fontWeight="bold"
+          fontSize={{ base: "sm", md: "md" }}
+          textColor={textColor}
+        >
+          {product?.description || "About the Product..."}
+        </Text>
+
         <HStack spacing={2} pt={2}>
           <IconButton
             aria-label="Edit product"
