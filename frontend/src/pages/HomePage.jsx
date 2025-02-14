@@ -13,7 +13,7 @@ const HomePage = () => {
 
   if (isLoading) return <div>Loading</div>;
 
-  console.log("Products:", products);
+  // console.log("Products:", products);
 
   return (
     <Container maxH={"container.xl"} py={12}>
