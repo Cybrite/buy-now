@@ -50,6 +50,8 @@ export const useProductStore = create((set) => ({
       method: "DELETE",
     });
     const data = await res.json();
+
+    //updating the UI
     if (data.success) {
       set((state) => ({
         products: state.products.filter((product) => product._id !== productId),
@@ -58,5 +60,24 @@ export const useProductStore = create((set) => ({
     return data;
   },
 
+  updateProduct: async (productId, updatedProduct) => {
+    const res = await fetch(`/api/products/${productId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedProduct),
+    });
+    const data = await res.json();
 
+    //updating the UI
+    if (data.success) {
+      set((state) => ({
+        products: state.products.map((product) =>
+          product._id === productId ? data.data : product
+        ),
+      }));
+    }
+    return data;
+  },
 }));
